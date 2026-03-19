@@ -11,6 +11,8 @@ const DATA_DIR = path.join(__dirname, "data");
 const BOOKS_FILE = path.join(DATA_DIR, "books.json");
 const RES_FILE = path.join(DATA_DIR, "reservations.json");
 
+
+
 // Desactiva el header "X-Powered-By: Express" por seguridad (menos información expuesta)
 app.disable("x-powered-by");
 
@@ -26,6 +28,7 @@ async function readJson(file, fallback) {
     return fallback;
   }
 }
+
 async function writeJsonAtomic(file, data) {
   // Escribe primero en un temporal y luego renombra.
   // Esto evita corrupción de datos si el servidor cae durante la escritura.
@@ -33,6 +36,7 @@ async function writeJsonAtomic(file, data) {
   await fs.writeFile(tmp, JSON.stringify(data, null, 2), "utf8");
   await fs.rename(tmp, file);
 }
+
 function userFromReq(req) {
   // Obtenemos el usuario del header personalizado X-User
   const u = (req.get("X-User") || "").trim();
@@ -40,9 +44,11 @@ function userFromReq(req) {
   // Limitamos longitud para evitar abusos
   return u.slice(0, 64);
 }
+
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, service: "biblio-api", ts: Date.now() });
 });
+
 app.get("/api/books", async (req, res) => {
   const booksData = await readJson(BOOKS_FILE, { books: [] });
   const reservations = await readJson(RES_FILE, { byBookId: {} });
@@ -61,7 +67,6 @@ app.get("/api/books", async (req, res) => {
 
   res.json({ books: out });
 });
-
 
 app.get("/api/books/:id", async (req, res) => {
   const id = String(req.params.id);
@@ -104,6 +109,7 @@ app.get("/api/reservations", async (req, res) => {
 
   res.json({ userId, reservations: my });
 });
+
 app.post("/api/reservations", async (req, res) => {
   const userId = userFromReq(req);
   if (!userId) return res.status(401).json({ error: "MISSING_USER" });
@@ -151,6 +157,7 @@ app.delete("/api/reservations/:bookId", async (req, res) => {
   await writeJsonAtomic(RES_FILE, reservations);
   res.json({ ok: true, removed: true });
 });
+
 // Servir archivos de la carpeta client/
 app.use(express.static(CLIENT_DIR, {
   extensions: ["html"],
